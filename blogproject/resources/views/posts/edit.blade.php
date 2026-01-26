@@ -1,10 +1,11 @@
 @extends('layouts.app')
 
 @section('content')
-    <h1>Create Post</h1>
+    <h1>Edit Post</h1>
     
-    <form action="{{ action([App\Http\Controllers\PostsController::class, 'store']) }}" method="POST">
+    <form action="{{ route('posts.update', $post->id) }}" method="POST">
     @csrf
+    @method('PUT')
 
         <div class="form-group">
             <label for="title">Title</label>
@@ -14,7 +15,7 @@
                 id="title"
                 class="form-control"
                 placeholder="Title"
-                value="{{ old('title') }}"
+                value="{{ old('title', $post->title) }}"
             >
         </div>
         <div class="mb-3">
@@ -25,10 +26,9 @@
                 class="form-control"
                 placeholder="Body"
                 rows="5"
-            >{{ old('body') }}</textarea>
+            >{{ old('body', $post->body) }}</textarea>
         </div>
 
         <button type="sumbit" class="btn btn-primary">Submit</button>
     </form>
-
 @endsection
