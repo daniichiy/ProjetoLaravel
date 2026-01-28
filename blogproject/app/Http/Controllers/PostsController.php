@@ -9,6 +9,16 @@ use DB;
 class PostsController extends Controller
 {
     /**
+     * Create a new controller instance.
+     *
+     * @return void
+     */
+    public function __construct()
+    {
+        $this->middleware('auth', ['except' => ['index', 'show']]);
+    }
+
+    /**
      * Display a listing of the resource.
      */
     public function index()
@@ -34,13 +44,34 @@ class PostsController extends Controller
     {
         $this->validate($request, [
             'title' => 'required',
-            'body'=> 'required'
+            'body'=> 'required',
+            'cover_image' => 'image|nullable|max:1999' //2 MB
         ]);
+        //handle the file upload
+        if($request->hasFile('cover_image')){
+            //get filename with extension
+            $filenameWithExt = $request->file('cover_image')->getClientOriginalName();
+
+            //get just filename
+            $filename = pathinfo($filenameWithExt, PATHINFO_FILENAME);
+
+            //get just ext
+            $extension = $request->file('cover_image')->getClientOriginalExtension();
+
+            //file to store
+            $fileNameToStore = $filename . '_' . time() . '.' . $extension;
+
+            //upload image
+            $path = $request->file('cover_image')->storeAs('public/cover_images', $fileNameToStore);
+        }else {
+            $fileNameToStore = 'noimage.jpeg';
+        }
 
         $post = new Post;
         $post->title = $request->input('title');
         $post->body = $request->input('body');
         $post->user_id = auth()->user()->id;
+        $post->cover_image = $fileNameToStore;
         $post->save();
 
         return redirect('/posts')->with('success', 'Posts created');
@@ -61,6 +92,10 @@ class PostsController extends Controller
     public function edit(string $id)
     {
         $post = Post::find($id);
+        if(auth()->user()->id !== $post->user_id){
+            return redirect('/posts')->with('error', 'Unauthorized page.');
+        }
+
         return view('posts.edit')->with('post', $post);
     }
 
@@ -88,6 +123,11 @@ class PostsController extends Controller
     public function destroy(string $id)
     {
         $post = Post::find($id);
+
+        if(auth()->user()->id !== $post->user_id){
+            return redirect('/posts')->with('error', 'Unauthorized page.');
+        }
+
         $post->delete();
         return redirect('/posts')->with('success', 'Post removed');
     }
